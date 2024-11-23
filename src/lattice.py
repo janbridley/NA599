@@ -100,7 +100,7 @@ def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0, px=9
 # TODO: Kernel/system should not be square! Should match aspect ratio of orthogonal box
 
 if __name__ == "__main__":
-    SIG_MATCH = 1.0
+    SIG_MATCH = 0.8
 
     # Define unit cell params for testing
     MONOCLINIC_CELL_PARAMS = {"L2": 1.4, "theta": np.pi / 5}
@@ -142,6 +142,7 @@ if __name__ == "__main__":
     dict_text = "\n".join(
         [f"{key}: {value:.4f}" for key, value in MONOCLINIC_CELL_PARAMS.items()]
     )
+    print(dict_text)
     ax[0, 1].text(
         0.5,
         0.5,
@@ -162,6 +163,9 @@ if __name__ == "__main__":
     non_matching_bkern = bravais_kernel(**HEXAGONAL_CELL_PARAMS, blur_sigma=SIG_MATCH)
     ax[0, 2].imshow(non_matching_bkern)
     ax[0, 2].set(xticks=[], yticks=[], title="Non-matching unit-cell kernel")
+    dict_text = "\n".join(
+        [f"{key}: {value:.4f}" for key, value in HEXAGONAL_CELL_PARAMS.items()]
+    )
     ax[0, 2].text(
         0.5,
         0.5,
@@ -177,9 +181,6 @@ if __name__ == "__main__":
     im_nm_brav = sp.signal.convolve2d(im, non_matching_bkern, mode="same")
     ax[1, 2].imshow(im_nm_brav, aspect="equal")
     ax[1, 2].set(xticks=[], yticks=[], title="Convolved with Incorrect Unit Cell")
-    dict_text = "\n".join(
-        [f"{key}: {value:.4f}" for key, value in HEXAGONAL_CELL_PARAMS.items()]
-    )
 
     plt.savefig("figs/example_image.svg", transparent=True, bbox_inches="tight")
     plt.show()
