@@ -41,7 +41,7 @@ def lattice2image(box, pos, px=64, blur_sigma=0.0, pad_width=0):
 
     # Calculate rectangular image with aspect ratio matching the input box
     assert np.isclose(box.xy, 0.0), "Box should be rectangular to bin correctly!"
-    px = (px, int(box.Ly/box.Lx*px))
+    px = (px, int(box.Ly / box.Lx * px))
 
     image, x, y = np.histogram2d(pos[:, 0], pos[:, 1], bins=px)
     image = image.T
@@ -49,16 +49,16 @@ def lattice2image(box, pos, px=64, blur_sigma=0.0, pad_width=0):
     y = y[:-1] + np.diff(y)
 
     # Remove points from outside the box. Should never trigger for orthogonal boxes
-    BOX_PADDING_SCALE = 0.9 # Required to properly wrap points near the box edges
+    BOX_PADDING_SCALE = 0.9  # Required to properly wrap points near the box edges
     coords = np.asarray(np.meshgrid(x, y)).reshape(2, -1).T
     coords = np.hstack([coords, np.zeros((coords.shape[0], 1))])
     is_inside = ~box.contains(BOX_PADDING_SCALE * coords).reshape(px).T
     image[is_inside] = np.nan
 
     image = np.pad(
-        image, 
-        pad_width=pad_width, 
-        constant_values=np.nan if np.isnan(image).any() else 0
+        image,
+        pad_width=pad_width,
+        constant_values=np.nan if np.isnan(image).any() else 0,
     )
 
     # TODO: image does not handle boundaries properly: real image is not square
@@ -89,7 +89,7 @@ def gkern(l=5, sigma=1.0):  # noqa: E741
     return kernel / kernel.sum()
 
 
-def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0, px = 9):
+def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0, px=9):
     """Create a one unit-cell kernel from bravais lattice parameters."""
     box, pos, _ = slice_to_orthogonal(
         *make_bravais2d(n=(1, 2, 1), L2=1.0, theta=theta, centered=centered)
@@ -139,6 +139,20 @@ if __name__ == "__main__":
     bkern = bravais_kernel(**MONOCLINIC_CELL_PARAMS, blur_sigma=SIG_MATCH)
     ax[0, 1].imshow(bkern)
     ax[0, 1].set(xticks=[], yticks=[], title="Matching unit-cell kernel")
+    dict_text = "\n".join(
+        [f"{key}: {value:.4f}" for key, value in MONOCLINIC_CELL_PARAMS.items()]
+    )
+    ax[0, 1].text(
+        0.5,
+        0.5,
+        dict_text,
+        color="white",
+        ha="center",
+        va="center",
+        transform=ax[0, 1].transAxes,
+        fontsize=12,
+        bbox={"boxstyle": "round", "facecolor": "#430153", "alpha": 0.8},
+    )
 
     im_brav = sp.signal.convolve2d(im, bkern, mode="same")
     ax[1, 1].imshow(im_brav, aspect="equal")
@@ -148,9 +162,24 @@ if __name__ == "__main__":
     non_matching_bkern = bravais_kernel(**HEXAGONAL_CELL_PARAMS, blur_sigma=SIG_MATCH)
     ax[0, 2].imshow(non_matching_bkern)
     ax[0, 2].set(xticks=[], yticks=[], title="Non-matching unit-cell kernel")
+    ax[0, 2].text(
+        0.5,
+        0.5,
+        dict_text,
+        color="white",
+        ha="center",
+        va="center",
+        transform=ax[0, 2].transAxes,
+        fontsize=12,
+        bbox={"boxstyle": "round", "facecolor": "#430153", "alpha": 0.8},
+    )
 
     im_nm_brav = sp.signal.convolve2d(im, non_matching_bkern, mode="same")
     ax[1, 2].imshow(im_nm_brav, aspect="equal")
     ax[1, 2].set(xticks=[], yticks=[], title="Convolved with Incorrect Unit Cell")
+    dict_text = "\n".join(
+        [f"{key}: {value:.4f}" for key, value in HEXAGONAL_CELL_PARAMS.items()]
+    )
 
+    plt.savefig("figs/example_image.svg", transparent=True, bbox_inches="tight")
     plt.show()
