@@ -36,25 +36,34 @@ def make_bravais2d(n, L2=1.0, theta=np.pi / 2, centered=False, sigma_noise=0.0):
     return box, pos - pos.mean(axis=0)
 
 
-def lattice2image(box, pos, px=64, blur_sigma=0.0):
+def lattice2image(box, pos, px=64, blur_sigma=0.0, pad_width=0):
     """Convert a freud system to a 2D image with an optional Gaussian blur."""
-    BOX_PADDING_SCALE = 0.9
+
+    # Calculate rectangular image with aspect ratio matching the input box
+    assert np.isclose(box.xy, 0.0), "Box should be rectangular to bin correctly!"
+    px = (px, int(box.Ly/box.Lx*px))
 
     image, x, y = np.histogram2d(pos[:, 0], pos[:, 1], bins=px)
     image = image.T
     x = x[:-1] + np.diff(x)
     y = y[:-1] + np.diff(y)
 
-    # Remove points from outside the box
-    # coords = np.asarray(np.meshgrid(x, y)).reshape(2, -1).T
-    # coords = np.hstack([coords, np.zeros((coords.shape[0], 1))])
-    # is_inside = ~box.contains(BOX_PADDING_SCALE * coords).reshape(px, px)
-    # image[is_inside] = np.nan
+    # Remove points from outside the box. Should never trigger for orthogonal boxes
+    BOX_PADDING_SCALE = 0.9 # Required to properly wrap points near the box edges
+    coords = np.asarray(np.meshgrid(x, y)).reshape(2, -1).T
+    coords = np.hstack([coords, np.zeros((coords.shape[0], 1))])
+    is_inside = ~box.contains(BOX_PADDING_SCALE * coords).reshape(px).T
+    image[is_inside] = np.nan
+
+    image = np.pad(
+        image, 
+        pad_width=pad_width, 
+        constant_values=np.nan if np.isnan(image).any() else 0
+    )
 
     # TODO: image does not handle boundaries properly: real image is not square
-    if blur_sigma > 0.0:
-        # image = sp.ndimage.gaussian_filter(image, sigma=blur_sigma, mode="wrap")
-        image = sp.ndimage.gaussian_filter(image, sigma=blur_sigma, mode="constant")
+    # image = sp.ndimage.gaussian_filter(image, sigma=blur_sigma, mode="wrap")
+    image = sp.ndimage.gaussian_filter(image, sigma=blur_sigma, mode="constant")
 
     return image
 
@@ -80,25 +89,21 @@ def gkern(l=5, sigma=1.0):  # noqa: E741
     return kernel / kernel.sum()
 
 
-def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0):
+def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0, px = 9):
     """Create a one unit-cell kernel from bravais lattice parameters."""
-    print(f"L2: {L2}, theta: {theta}, centered: {centered}")
     box, pos, _ = slice_to_orthogonal(
-        *make_bravais2d(n=(1,2,1), L2=1.0, theta=theta, centered=centered)
+        *make_bravais2d(n=(1, 2, 1), L2=1.0, theta=theta, centered=centered)
     )
-    system_plot((box, pos))
-    plt.show()
-    # box, pos = make_bravais2d(n=(1, 2, 1), L2=1.0, theta=theta, centered=centered)
-    return lattice2image(box, pos, px=10, blur_sigma=blur_sigma)
+    return lattice2image(box, pos, px=px, blur_sigma=blur_sigma, pad_width=1).T
 
 
 # TODO: Kernel/system should not be square! Should match aspect ratio of orthogonal box
 
 if __name__ == "__main__":
-    SIG_MATCH = 0.0
+    SIG_MATCH = 1.0
 
     # Define unit cell params for testing
-    MONOCLINIC_CELL_PARAMS = {"L2": 0.4, "theta": np.pi / 6}
+    MONOCLINIC_CELL_PARAMS = {"L2": 1.4, "theta": np.pi / 5}
     HEXAGONAL_CELL_PARAMS = {"L2": 1, "theta": np.pi / 3}
     RECTANGULAR_CELL_PARAMS = {"L2": 2}
     RECTANGULAR_CENTERED_CELL_PARAMS = {"L2": 2, "centered": True}
