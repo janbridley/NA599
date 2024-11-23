@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     # First, convolve with gaussian to verify correctness
     kernel = gkern(5)
-    im_gauss = sp.signal.convolve2d(im, kernel, mode="same")
+    im_gauss = sp.signal.convolve(im, kernel, mode="same")
     ax[1, 0].imshow(im_gauss, aspect="equal")
     ax[1, 0].set(xticks=[], yticks=[], title="Convolved with Gaussian (σ=1.0)")
 
@@ -56,7 +56,7 @@ if __name__ == "__main__":
         bbox={"boxstyle": "round", "facecolor": "#430153", "alpha": 0.8},
     )
 
-    im_brav = sp.signal.convolve2d(im, bkern, mode="same")
+    im_brav = sp.signal.convolve(im, bkern, mode="same")
     ax[1, 1].imshow(im_brav, aspect="equal")
     ax[1, 1].set(xticks=[], yticks=[], title="Convolved with Matching Unit Cell")
 
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         bbox={"boxstyle": "round", "facecolor": "#430153", "alpha": 0.8},
     )
 
-    im_nm_brav = sp.signal.convolve2d(im, non_matching_bkern, mode="same")
+    im_nm_brav = sp.signal.convolve(im, non_matching_bkern, mode="same")
     ax[1, 2].imshow(im_nm_brav, aspect="equal")
     ax[1, 2].set(xticks=[], yticks=[], title="Convolved with Incorrect Unit Cell")
 
