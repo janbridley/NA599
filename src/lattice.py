@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 
 
 SEED = 1253
+FIGSIZE = (14, 7)
 
 
 def make_bravais2d(n, L2=1.0, theta=np.pi / 2, centered=False, sigma_noise=0.0):
@@ -45,14 +46,15 @@ def lattice2image(box, pos, px=64, blur_sigma=0.0):
     y = y[:-1] + np.diff(y)
 
     # Remove points from outside the box
-    coords = np.asarray(np.meshgrid(x, y)).reshape(2, -1).T
-    coords = np.hstack([coords, np.zeros((coords.shape[0], 1))])
-    is_inside = ~box.contains(BOX_PADDING_SCALE * coords).reshape(px, px)
-    image[is_inside] = np.nan
+    # coords = np.asarray(np.meshgrid(x, y)).reshape(2, -1).T
+    # coords = np.hstack([coords, np.zeros((coords.shape[0], 1))])
+    # is_inside = ~box.contains(BOX_PADDING_SCALE * coords).reshape(px, px)
+    # image[is_inside] = np.nan
 
     # TODO: image does not handle boundaries properly: real image is not square
     if blur_sigma > 0.0:
-        image = sp.ndimage.gaussian_filter(image, sigma=blur_sigma, mode="wrap")
+        # image = sp.ndimage.gaussian_filter(image, sigma=blur_sigma, mode="wrap")
+        image = sp.ndimage.gaussian_filter(image, sigma=blur_sigma, mode="constant")
 
     return image
 
@@ -78,12 +80,33 @@ def gkern(l=5, sigma=1.0):  # noqa: E741
     return kernel / kernel.sum()
 
 
+def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0):
+    """Create a one unit-cell kernel from bravais lattice parameters."""
+    print(f"L2: {L2}, theta: {theta}, centered: {centered}")
+    box, pos, _ = slice_to_orthogonal(
+        *make_bravais2d(n=(1,2,1), L2=1.0, theta=theta, centered=centered)
+    )
+    system_plot((box, pos))
+    plt.show()
+    # box, pos = make_bravais2d(n=(1, 2, 1), L2=1.0, theta=theta, centered=centered)
+    return lattice2image(box, pos, px=10, blur_sigma=blur_sigma)
+
+
+# TODO: Kernel/system should not be square! Should match aspect ratio of orthogonal box
+
 if __name__ == "__main__":
-    theta = np.pi / 3.32
-    L2 = 0.4
+    SIG_MATCH = 0.0
+
+    # Define unit cell params for testing
+    MONOCLINIC_CELL_PARAMS = {"L2": 0.4, "theta": np.pi / 6}
+    HEXAGONAL_CELL_PARAMS = {"L2": 1, "theta": np.pi / 3}
+    RECTANGULAR_CELL_PARAMS = {"L2": 2}
+    RECTANGULAR_CENTERED_CELL_PARAMS = {"L2": 2, "centered": True}
+
     # box, pos = make_bravais2d((4,4, 1), L2=1, theta=2 * np.pi / 3)  # hexagonal
-    box, pos = make_bravais2d(6, L2=L2, theta=theta)  # monoclinic
-    # box, pos = make_bravais2d(4, L2 = 3/4, centered=True) # Centered rectangular
+    # box, pos = make_bravais2d(4, **RECTANGULAR_CENTERED_CELL_PARAMS) # Centered rectangular
+
+    box, pos = make_bravais2d(8, **MONOCLINIC_CELL_PARAMS)
 
     ax, _ = system_plot((box, pos))
 
@@ -95,20 +118,34 @@ if __name__ == "__main__":
     plt.close()
 
     # Now our data is in an orthogonal box and we can convolve it!
-    fig, ax = plt.subplots(1, 2, sharex=True, sharey=True)
+    fig, ax = plt.subplots(2, 3, figsize=FIGSIZE)  # , sharex=True, sharey=True)
     im = lattice2image(orthogonal_box, wrapped, blur_sigma=0)
-    ax[0].imshow(im, aspect="equal")
-    ax[0].set_title("Discretized Data (Perfect)")
-    ax[0].set_xticks([])
-    ax[0].set_yticks([])
+    ax[0, 0].imshow(im, aspect="equal")
+    # ax[0].set_title("Discretized Data (Perfect)")
+    ax[0, 0].set(xticks=[], yticks=[], title="Discretized Data (Perfect)")
 
     # First, convolve with gaussian to verify correctness
     kernel = gkern(5)
-    # Periodic boundaries mess with our wrapping somehow
-    # im_gauss = sp.signal.convolve2d(im, kernel, boundary="wrap")
     im_gauss = sp.signal.convolve2d(im, kernel, mode="same")
+    ax[1, 0].imshow(im_gauss, aspect="equal")
+    ax[1, 0].set(xticks=[], yticks=[], title="Convolved with Gaussian (σ=1.0)")
 
-    ax[1].imshow(im_gauss, aspect="equal")
-    ax[1].set_title("Convolved with Gaussian (σ=1.0)")
+    # matching
+    bkern = bravais_kernel(**MONOCLINIC_CELL_PARAMS, blur_sigma=SIG_MATCH)
+    ax[0, 1].imshow(bkern)
+    ax[0, 1].set(xticks=[], yticks=[], title="Matching unit-cell kernel")
+
+    im_brav = sp.signal.convolve2d(im, bkern, mode="same")
+    ax[1, 1].imshow(im_brav, aspect="equal")
+    ax[1, 1].set(xticks=[], yticks=[], title="Convolved with Matching Unit Cell")
+
+    # non-matchin
+    non_matching_bkern = bravais_kernel(**HEXAGONAL_CELL_PARAMS, blur_sigma=SIG_MATCH)
+    ax[0, 2].imshow(non_matching_bkern)
+    ax[0, 2].set(xticks=[], yticks=[], title="Non-matching unit-cell kernel")
+
+    im_nm_brav = sp.signal.convolve2d(im, non_matching_bkern, mode="same")
+    ax[1, 2].imshow(im_nm_brav, aspect="equal")
+    ax[1, 2].set(xticks=[], yticks=[], title="Convolved with Incorrect Unit Cell")
 
     plt.show()
