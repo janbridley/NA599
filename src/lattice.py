@@ -98,3 +98,14 @@ def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0, px=9
 
 if __name__ == "__main__":
     """"""
+    import gsd.hoomd
+    import signac
+
+    project = signac.get_project()
+    job = project.open_job("32c4dff28f4650a0d72cdb966cffc409")
+
+    path = "data/32c4dff28f4650a0d72cdb966cffc409"
+    print(job, job.id)
+    with gsd.hoomd.open(job.fn("trajectory.gsd"), "r") as f:
+        print(len(f))
+        
