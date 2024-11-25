@@ -1,0 +1,19 @@
+name: na599p
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10.15
+  - freud<3.1.0 # Required to ensure freud works properly numpy < 2.0
+  - numpy<2.0.0 # Required for correct c interface from ESCNN
+  - gsd
+  - pillow
+  - scipy
+  - signac
+  - pytorch
+  - torchvision
+  - matplotlib
+  - cmcrameri
+  - pip
+  - pip:
+    - escnn @ git+https://github.com/QUVA-Lab/escnn@v1.0.13
+    - lie_learn==0.0.1.post1
