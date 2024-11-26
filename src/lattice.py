@@ -9,7 +9,7 @@ from freud.data import UnitCell
 
 SEED = 1253
 FIGSIZE = (14, 7)
-FINAL_DATA_SHAPE = (192, 256)
+FINAL_DATA_SHAPE = (192, 192) # Just cut to square for now - should be good
 
 
 def make_bravais2d(n, L2=1.0, theta=np.pi / 2, centered=False, sigma_noise=0.0):
