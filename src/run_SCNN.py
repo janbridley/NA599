@@ -1,6 +1,4 @@
 import sys
-sys.path.append('../')
-
 import torch
 
 from escnn import gspaces
@@ -18,15 +16,11 @@ import numpy as np
 
 from PIL import Image
 
-from SCNN.py import SteerableCNN
+from SCNN import SteerableCNN
 
 
 ## Device:
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-## Import the data:
-!wget -nc http://www.iro.umontreal.ca/~lisa/icml2007data/mnist_rotation_new.zip
-!unzip -n mnist_rotation_new.zip -d mnist_rotation_new  # uncompress the zip file
 
 ## Build the dataset:
 class MnistRotDataset(Dataset):
@@ -35,9 +29,11 @@ class MnistRotDataset(Dataset):
         assert mode in ['train', 'test']
             
         if mode == "train":
-            file = "mnist_rotation_new/mnist_all_rotation_normalized_float_train_valid.amat"
+            file = "../data/mnist_rotation_new/mnist_all_rotation_normalized_float_train_valid.amat"
         else:
-            file = "mnist_rotation_new/mnist_all_rotation_normalized_float_test.amat"
+            file = "../data/mnist_rotation_new/mnist_all_rotation_normalized_float_test.amat"
+
+        print("Data files successfully found.")
         
         self.transform = transform
 
@@ -70,6 +66,8 @@ totensor = ToTensor()
 
 ## Build the model:
 model = SteerableCNN().to(device) 
+print("Model succuessfully built")
+
 # Now randomly initialized. we do not expect it to produce the right class probabilities
 # BUT! Should still produce the same output for rotated versions of the same image.
 
@@ -96,6 +94,7 @@ test_loader = torch.utils.data.DataLoader(mnist_test, batch_size=64)
 loss_function = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=5e-5, weight_decay=1e-5)
 
+print('Beginning training loop.')
 for epoch in range(31):
     model.train()
     for i, (x, t) in enumerate(train_loader):
