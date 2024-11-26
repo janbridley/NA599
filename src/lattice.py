@@ -3,14 +3,13 @@ import scipy as sp
 import numpy as np
 import freud
 from freud.data import UnitCell
-from freud.plot import system_plot
 
-import matplotlib.pyplot as plt
 # from matplotlib.transforms import Affine2D
 
 
 SEED = 1253
 FIGSIZE = (14, 7)
+FINAL_DATA_SHAPE = (192, 256)
 
 
 def make_bravais2d(n, L2=1.0, theta=np.pi / 2, centered=False, sigma_noise=0.0):
@@ -41,7 +40,10 @@ def lattice2image(box, pos, px=64, blur_sigma=0.0, pad_width=0):
 
     # Calculate rectangular image with aspect ratio matching the input box
     assert np.isclose(box.xy, 0.0), "Box should be rectangular to bin correctly!"
-    px = (px, int(box.Ly / box.Lx * px))
+    px = (
+        px,
+        int(box.Ly / box.Lx * px),
+    )  # if box.Ly > box.Lx else (int(box.Lx / box.Ly * px), px)
 
     image, x, y = np.histogram2d(pos[:, 0], pos[:, 1], bins=px)
     image = image.T
@@ -65,7 +67,7 @@ def lattice2image(box, pos, px=64, blur_sigma=0.0, pad_width=0):
     # image = sp.ndimage.gaussian_filter(image, sigma=blur_sigma, mode="wrap")
     image = sp.ndimage.gaussian_filter(image, sigma=blur_sigma, mode="constant")
 
-    return image
+    return image.astype(np.float32)
 
 
 def slice_to_orthogonal(box, pos):
@@ -96,16 +98,62 @@ def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0, px=9
     )
     return lattice2image(box, pos, px=px, blur_sigma=blur_sigma, pad_width=1).T
 
+
+def frame2image(
+    frame: "gsd.hoomd.Frame", px=64, cut_size: tuple[int, int] | None = None
+):
+    """Render a GSD frame to a rectangular image."""
+    box, pos = freud.box.Box(*frame.configuration.box), frame.particles.position
+
+    im = lattice2image(*slice_to_orthogonal(box, pos)[:2], px=px)
+
+    if cut_size is not None:
+        im = im[: cut_size[0], : cut_size[1]]
+    return im
+
+
+# Actual MNIST data set is a raw data array - no need to save to image file! Can do npz
+
 if __name__ == "__main__":
     """"""
     import gsd.hoomd
     import signac
+    from tqdm import tqdm
 
     project = signac.get_project()
-    job = project.open_job("32c4dff28f4650a0d72cdb966cffc409")
+    job = project.open_job(id="32c4dff28f4650a0d72cdb966cffc409")
 
-    path = "data/32c4dff28f4650a0d72cdb966cffc409"
-    print(job, job.id)
-    with gsd.hoomd.open(job.fn("trajectory.gsd"), "r") as f:
-        print(len(f))
-        
+    def save_trajectory_as_images(job):
+        """Save a gsd trajectory stored in a signac job to a .npz file."""
+
+        data, args = [], []
+        with gsd.hoomd.open(job.fn("trajectory.gsd"), "r") as traj:
+            print(f"N: {traj[0].particles.N}")
+            if traj[0].particles.N != 1024:
+                raise ValueError(
+                    "Images sizes won't be correct for different system sizes."
+                )
+
+            for f in tqdm(traj[::10]):
+                data.append(frame2image(f, px=256))
+                args.append(f"ts{f.configuration.step}")
+
+        min_size = np.min([im.shape for im in data], axis=0)
+
+        rect_data = [im[: FINAL_DATA_SHAPE[0], : FINAL_DATA_SHAPE[1]] for im in data]
+
+        # Perform some basic verification
+        assert (
+            len(np.array(rect_data)) > 0
+        ), "Verification failed! Arrays are not orthorhombic."
+        assert (min_size[0] >= FINAL_DATA_SHAPE[0]) and (
+            min_size[1] >= FINAL_DATA_SHAPE[1]
+        )
+
+        np.savez_compressed(job.fn("data.npz"), args=args, kwds=rect_data)
+        return rect_data, args
+
+    for job in project.find_jobs():
+        save_trajectory_as_images(job)
+    # plt.imshow(im)
+    # plt.show()
