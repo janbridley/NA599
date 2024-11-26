@@ -15,7 +15,7 @@ import numpy as np
 
 from PIL import Image
 
-from SCNN import SteerableCNN
+from SCNN import SteerableCNN, IM_SIZE
 
 """
 ABOUT test_SCNN: 
@@ -61,14 +61,14 @@ class MnistRotDataset(Dataset):
         return len(self.labels)
 
 
-# images are padded to have shape 29x29.
+# images are padded to have shape IM_SIZExIM_SIZE.
 # this allows to use odd-size filters with stride 2 when downsampling a feature map in the model
 pad = Pad((0, 0, 1, 1), fill=0)
 
 # to reduce interpolation artifacts (e.g. when testing the model on rotated images),
 # we upsample an image by a factor of 3, rotate it and finally downsample it again
-resize1 = Resize(87)
-resize2 = Resize(29)
+resize1 = Resize(IM_SIZE * 3)
+resize2 = Resize(IM_SIZE)
 
 totensor = ToTensor()
 
@@ -98,7 +98,7 @@ def test_model(model: torch.nn.Module, x: Image):
         for r in range(8):
             x_transformed = totensor(
                 resize2(x.rotate(r * 45.0, Image.BILINEAR))
-            ).reshape(1, 1, 29, 29)
+            ).reshape(1, 1, IM_SIZE, IM_SIZE)
             x_transformed = x_transformed.to(device)
 
             y = model(x_transformed)

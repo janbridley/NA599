@@ -7,6 +7,7 @@ import torch
 from escnn import gspaces
 from escnn import nn
 
+IM_SIZE = 29 # Pixels, square
 
 class SteerableCNN(torch.nn.Module):
     def __init__(self, n_classes=10):
@@ -26,7 +27,7 @@ class SteerableCNN(torch.nn.Module):
         # we choose 24 feature fields, each transforming under the regular representation of C8
         out_type = nn.FieldType(self.r2_act, 24 * [self.r2_act.regular_repr])
         self.block1 = nn.SequentialModule(
-            nn.MaskModule(in_type, 29, margin=1),
+            nn.MaskModule(in_type, IM_SIZE, margin=1),
             nn.R2Conv(in_type, out_type, kernel_size=7, padding=1, bias=False),
             nn.InnerBatchNorm(out_type),
             nn.ReLU(out_type, inplace=True),

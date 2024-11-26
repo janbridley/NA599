@@ -9,7 +9,7 @@ from torchvision.transforms import Compose
 from torchvision.transforms import InterpolationMode
 
 
-from SCNN import SteerableCNN
+from SCNN import SteerableCNN, IM_SIZE
 
 
 ## Device:
@@ -18,14 +18,14 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 print("Build the dataset...")
 from data import MnistRotDataset
 
-# images are padded to have shape 29x29.
+# images are padded to have shape IM_SIZExIM_SIZE.
 # this allows to use odd-size filters with stride 2 when downsampling a feature map in the model
 pad = Pad((0, 0, 1, 1), fill=0)
 
 # to reduce interpolation artifacts (e.g. when testing the model on rotated images),
 # we upsample an image by a factor of 3, rotate it and finally downsample it again
-resize1 = Resize(87)
-resize2 = Resize(29)
+resize1 = Resize(IM_SIZE * 3)
+resize2 = Resize(IM_SIZE)
 
 totensor = ToTensor()
 
