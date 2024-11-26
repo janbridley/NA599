@@ -22,7 +22,7 @@ from SCNN import SteerableCNN
 ## Device:
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-## Build the dataset:
+print('Build the dataset...')
 class MnistRotDataset(Dataset):
     
     def __init__(self, mode, transform=None):
@@ -65,13 +65,14 @@ resize2 = Resize(29)
 totensor = ToTensor()
 
 ## Build the model:
+print("Building Model...")
 model = SteerableCNN().to(device) 
-print("Model succuessfully built")
 
 # Now randomly initialized. we do not expect it to produce the right class probabilities
 # BUT! Should still produce the same output for rotated versions of the same image.
 
 ## Train the model:
+print('Set up model training...')
 train_transform = Compose([
     pad,
     resize1,
@@ -94,7 +95,7 @@ test_loader = torch.utils.data.DataLoader(mnist_test, batch_size=64)
 loss_function = torch.nn.CrossEntropyLoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=5e-5, weight_decay=1e-5)
 
-print('Beginning training loop.')
+print('Beginning training loop...')
 for epoch in range(31):
     model.train()
     for i, (x, t) in enumerate(train_loader):
@@ -134,5 +135,8 @@ raw_mnist_test = MnistRotDataset(mode='test')
 # retrieve the first image from the test set
 x, y = next(iter(raw_mnist_test))
 
+print('Evaluating the model...')
 # evaluate the model
 test_model(model, x)
+
+print('Completed.')

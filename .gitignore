@@ -1,2 +1,4 @@
 *.amat
 *.zip
+.gitignore
+*/__pycache__/
