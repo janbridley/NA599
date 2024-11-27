@@ -1,5 +1,11 @@
 from lattice import *
 
+import cmcrameri.cm as cmc
+import matplotlib.pyplot as plt
+from freud.plot import system_plot
+
+
+
 if __name__ == "__main__":
     SIG_MATCH = 0.8
 
@@ -25,6 +31,7 @@ if __name__ == "__main__":
 
     # Now our data is in an orthogonal box and we can convolve it!
     fig, ax = plt.subplots(2, 3, figsize=FIGSIZE)  # , sharex=True, sharey=True)
+    plt.set_cmap('cmc.acton')
     im = lattice2image(orthogonal_box, wrapped, blur_sigma=0)
     ax[0, 0].imshow(im, aspect="equal")
     # ax[0].set_title("Discretized Data (Perfect)")
