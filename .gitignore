@@ -1,4 +1,4 @@
 *.amat
 *.zip
-.gitignore
 */__pycache__/
+.DS_Store
