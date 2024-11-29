@@ -28,6 +28,7 @@ def make_bravais2d(n, L2=1.0, theta=np.pi / 2, centered=False, sigma_noise=0.0):
 
     L1, α, β = 1, np.pi / 2, np.pi / 2
     box = freud.box.Box.from_box_lengths_and_angles(L1, L2, 0, α, β, theta)
+    #box = freud.box.Box(Lx=L1, Ly=L2, is2D=True, tilt_factors=(0, theta))
     basis_positions = [[0.5, 0.5, 0], [0.0, 0.0, 0]] if centered else [[0.5, 0.5, 0]]
 
     uc = UnitCell(box, basis_positions=basis_positions)

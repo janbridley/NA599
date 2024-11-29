@@ -48,6 +48,7 @@ class SimulationData(Dataset):
         self.images = []
 
         for job in jobs:
+            print('Transforming job ', job, ' out of ', len(jobs), '.')
             data = np.load(job.fn("data.npz"))
 
             # Labels are stored in the data args.
