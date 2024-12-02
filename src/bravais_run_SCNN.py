@@ -4,6 +4,7 @@ import torch.nn as nn
 import numpy as np
 import torch.optim as optim
 import matplotlib.pyplot as plt
+import torch.nn.functional as F
 
 from torch.utils.data import Dataset
 from torchvision.transforms import ToTensor
@@ -14,6 +15,25 @@ from tqdm import tqdm
 from SCNN import SteerableCNN, IM_SIZE
 from lattice import *
 from data import SimulationData
+
+
+## Define MSE function
+def test_kernels_on_im(image, kernels):
+    """
+    Test different kernels on a single image.
+    Uses Mean Square Error as the methof to determine loss.
+    """
+    results = {}
+    image_tensor = torch.tensor(image).float().unsqueeze(0).unsqueeze(0)
+
+    for name, kernel in kernels.items():
+        kernel_tensor = torch.tensor(kernel).float().unsqueeze(0).unsqueeze(0)
+        convolved = F.conv2d(image_tensor, kernel_tensor, padding='same')
+        mse = F.mse_loss(convolved, image_tensor)
+        results[name] = mse.item()
+
+    best_kernel = min(results, key=results.get)
+    return best_kernel, results
 
 ## Device:
 device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -46,7 +66,7 @@ plt.imshow(im)
 plt.show()
 
 im_array = np.array(im)
-best_kernel, results = test_kernels_on_image(im_array, kernels)
+best_kernel, results = test_kernels_on_im(im_array, kernels)
 
 print(f"Best matching kernel for label {label}: {best_kernel}")
 print("Similarity scores for each kernel:", results)
