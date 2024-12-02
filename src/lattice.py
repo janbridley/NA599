@@ -3,11 +3,14 @@ import scipy as sp
 import numpy as np
 import freud
 from freud.data import UnitCell
-
+from freud.locality import Voronoi
+import matplotlib.pyplot as plt
 # from matplotlib.transforms import Affine2D
 
 
 SEED = 1253
+np.random.seed(SEED)
+
 FIGSIZE = (14, 7)
 FINAL_DATA_SHAPE = (193, 193) # Square images with odd numbers of pixels
 
@@ -131,9 +134,9 @@ def make_polycrystalline(midpoints, theta, n=100, L2=1.0, sigma_noise=0.0):
     box, _, _ = slice_to_orthogonal(box, midpoints)
     vor = Voronoi()
     vor.compute((box, midpoints))
-    plt.figure(figsize = (10,10))
-    ax = plt.gca()
-    vor.plot(ax=ax)
+    # plt.figure(figsize = (10,10))
+    # ax = plt.gca()
+    # vor.plot(ax=ax)
     #ax.scatter(midpoints[:, 0], midpoints[:, 1], s=10, c="k")
 
     all_positions = []
@@ -167,7 +170,7 @@ def make_polycrystalline(midpoints, theta, n=100, L2=1.0, sigma_noise=0.0):
     # Create a box that encompasses all points
     
     final_box, final_positions, _ = slice_to_orthogonal(box, final_positions)
-    ax.scatter(final_positions[:, 0], final_positions[:, 1], s=4, c="b")
+    # ax.scatter(final_positions[:, 0], final_positions[:, 1], s=4, c="b")
     return final_box, final_positions
 
 
