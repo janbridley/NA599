@@ -39,7 +39,7 @@ if __name__ == "__main__":
     orthogonal_box, wrapped, (x, y) = slice_to_orthogonal(box, pos)
 
     ax.scatter(*wrapped.T[:2], color="#C76E95")
-    orthogonal_box.plot(ax=ax, label="Rectolinear Basis")
+    orthogonal_box.plot(ax=ax, label="Rectilinear Basis")
     ax.set(xticks=[], yticks=[], xlabel="", ylabel="", title="Original System")
     plt.legend()
     # plt.savefig("figs/wrapped.png", transparent=True, bbox_inches="tight", dpi=300)
@@ -52,12 +52,13 @@ if __name__ == "__main__":
 
     midpoints = np.array([[-0.45,-0.25,0],[-0.4,0.25,0],[0.35,0.35,0]])
     # box, pos = make_polycrystalline(midpoints, theta =2*np.pi/3, n=30, L2=1.0, sigma_noise=0.0)
-    box, pos = make_polycrystalline(midpoints, **MONOCLINIC_CELL_PARAMS, n=8, sigma_noise=0.0)
+    box, pos, rotations = make_polycrystalline(midpoints, **MONOCLINIC_CELL_PARAMS, n=8, sigma_noise=0.0)
     
     im = lattice2image(box, pos, blur_sigma=0, px=PX)
     kernel = np.pad(gkern(16, sigma=SIG_MATCH),4)
     im_gauss = sp.signal.convolve(im, kernel, mode=CONVOLVE_MODE)
-    bkern = bravais_kernel(**MONOCLINIC_CELL_PARAMS, blur_sigma=SIG_MATCH, px=OUT_PX, n=N_KERN)
+    bkern = bravais_kernel(**MONOCLINIC_CELL_PARAMS, blur_sigma=SIG_MATCH, px=OUT_PX, n=N_KERN, rot_angle = rotations[2])
+    print('shape bkern: ',bkern.shape)
     im_brav = sp.signal.convolve(im, bkern, mode=CONVOLVE_MODE)
     non_matching_bkern = bravais_kernel(**HEXAGONAL_CELL_PARAMS, blur_sigma=SIG_MATCH, px = OUT_PX)
     im_nm_brav = sp.signal.convolve(im, non_matching_bkern, mode=CONVOLVE_MODE)
@@ -73,8 +74,6 @@ if __name__ == "__main__":
     print(f"RMSD matching: {mse.item()}")
     mse_nm = F.mse_loss(im_tensor, im_nm_brav_tensor)
     print(f"RMSD nonmatching: {mse_nm.item()}")
-
-
 
     # Combine the first column subplots (ax[0, 0] and ax[1, 0])
     ax_main = fig.add_subplot(2, 4, (1, 5))  # Combines the first column (spans rows 1 and 2)
@@ -140,3 +139,16 @@ if __name__ == "__main__":
 
     plt.savefig("../figs/example2.png",transparent=True, bbox_inches="tight")
     # plt.show()
+
+    plt.close()
+
+    # Plotting kernels to debug
+    '''
+    plt.figure()
+    fig, ax = plt.subplots(1, 2, dpi=300)
+    plt.set_cmap('cmc.acton')
+    ax[0].imshow(bkern, aspect="equal")
+    ax[1].imshow(im_gauss[:bkern.shape[0], im_gauss.shape[1]-bkern.shape[1]:], aspect="equal")
+    plt.savefig("../figs/example2_kernels.png",transparent=True, bbox_inches="tight")
+    '''
+

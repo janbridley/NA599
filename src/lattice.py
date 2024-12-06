@@ -95,14 +95,46 @@ def gkern(l=5, sigma=1.0):  # noqa: E741
     return kernel / kernel.sum()
 
 
+#def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0, px=9, n=(3,3)):
 def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0, px=9, n=(3,3), rot_angle = 0):
     """Create a one unit-cell kernel from bravais lattice parameters."""
     print(f"L2: {L2}")
     print(f"theta: {theta/np.pi/np.pi:.4f}π")
     print(f"px: {px}")
-    box, pos = make_bravais2d(n=(n[0]+1, n[1]+1, 1), L2=L2, theta=theta, centered=centered)
-    pos[:,:-1] = pos[:,:-1] @ rotation_matrix(rot_angle).T
-    box, pos, _ = slice_to_orthogonal(box, pos)
+    box, pos = make_bravais2d(n=(n[0]+2, n[1]+2, 1), L2=L2, theta=theta, centered=centered)
+    print('len pos 0: ', len(pos))
+    #box, pos, _ = slice_to_orthogonal(
+    #    *make_bravais2d(n=(*n, 1), L2=L2, theta=theta, centered=centered))
+    
+
+    box, unrot_pos, _ = slice_to_orthogonal(box, pos)
+    
+    #pos[:,:-1] = unrot_pos[:,:-1] @ rotation_matrix(rot_angle).T
+    pos[:,:-1] = unrot_pos[:,:-1] @ rotation_matrix(rot_angle)
+    
+    print('rot_angle: ', rot_angle)
+    
+    '''
+    plt.scatter(unrot_pos[:,0],-unrot_pos[:,1], s=.5)
+    plt.scatter(pos[:,0],-pos[:,1], s=.5)
+    plt.savefig(f"../figs/kpos_{rot_angle:.2f}.png",transparent=True, dpi=300, bbox_inches="tight")
+    plt.close()
+    '''
+
+    pos = np.array(pos)
+    rad = pos[:,0]**2 + pos[:,1]**2
+    sort_idx = np.argsort(rad)
+    close_idx = sort_idx[:(n[0] * n[1])]
+    pos = pos[close_idx]
+    print(pos) 
+    print(box)
+    print('len pos 1: ', len(pos))
+
+    '''
+    plt.scatter(pos[:,0], pos[:,1])
+    plt.savefig(f'../figs/example2_pts_final_{theta:.2f}.png',transparent=True, bbox_inches="tight")
+    plt.close()
+    '''
     return lattice2image(box, pos, px=px, blur_sigma=blur_sigma, pad_width=4)
 
 
@@ -140,9 +172,11 @@ def make_polycrystalline(midpoints, theta, n=100, L2=1.0, sigma_noise=0.0):
     #ax.scatter(midpoints[:, 0], midpoints[:, 1], s=10, c="k")
 
     all_positions = []
+    rotations = []
     # Generate lattice for each Voronoi region
     for i, midpoint in enumerate(midpoints):
         rotation_angle = np.random.uniform(0, 2*np.pi)
+        rotations.append(rotation_angle)
         rot_matrix = rotation_matrix(rotation_angle)
         if i==0:
             rot_matrix = rotation_matrix(0)
@@ -152,11 +186,18 @@ def make_polycrystalline(midpoints, theta, n=100, L2=1.0, sigma_noise=0.0):
             theta=theta,
             sigma_noise=sigma_noise
         )
-        region_pos[:,:-1] = region_pos[:,:-1] @ rot_matrix.T
-        translated_pos = region_pos #+ midpoint
-        
-        distances = box.compute_all_distances(translated_pos, midpoints)
 
+        #region_pos[:,:-1] = region_pos[:,:-1] @ rot_matrix.T
+        region_pos[:,:-1] = region_pos[:,:-1] @ rot_matrix
+        
+        translated_pos = region_pos #+ midpoint
+        '''
+        plt.scatter(translated_pos[:,0],-translated_pos[:,1], s=.4)
+        plt.savefig("../figs/pos_before_cut.png",transparent=True, dpi=300, bbox_inches="tight")
+        plt.close()
+        '''
+        distances = box.compute_all_distances(translated_pos, midpoints)
+        
         # Filter points within Voronoi region
         mask_is_closest = np.argmin(distances, axis = 1) == i
         mask_in_box = box.contains(translated_pos)
@@ -164,19 +205,26 @@ def make_polycrystalline(midpoints, theta, n=100, L2=1.0, sigma_noise=0.0):
         wrapped_pos = box.wrap(filtered_pos)
         all_positions.append(wrapped_pos)
     
+    rotations[0] = 0
+    print('rotations:\n', rotations)
+
     # Combine all positions
     final_positions = np.vstack(all_positions)
+    '''
+    plt.scatter(final_positions[:,0],-final_positions[:,1], s=.4)
+    plt.savefig("../figs/pos_after_cut.png",transparent=True, dpi=300, bbox_inches="tight")
+    plt.close()
+    '''
     
     # Create a box that encompasses all points
     
     final_box, final_positions, _ = slice_to_orthogonal(box, final_positions)
     # ax.scatter(final_positions[:, 0], final_positions[:, 1], s=4, c="b")
-    return final_box, final_positions
+    return final_box, final_positions, rotations
 
 
-midpoints = np.array([[-0.45,-0.25,0],[-0.4,0.25,0],[0.35,0.35,0]])
-make_polycrystalline(midpoints, theta =2*np.pi/3, n=30, L2=1.0, sigma_noise=0.0)
-
+#midpoints = np.array([[-0.45,-0.25,0],[-0.4,0.25,0],[0.35,0.35,0]])
+#make_polycrystalline(midpoints, theta =2*np.pi/3, n=30, L2=1.0, sigma_noise=0.0)
 
 # Actual MNIST data set is a raw data array - no need to save to image file! Can do npz
 
