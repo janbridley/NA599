@@ -138,5 +138,5 @@ if __name__ == "__main__":
     ax[1, 3].imshow(im_nm_brav, aspect="equal")
     ax[1, 3].set(xticks=[], yticks=[], title="Convolved with Incorrect Unit Cell")
 
-    plt.savefig("figs/example2.png",transparent=True, bbox_inches="tight")
+    plt.savefig("../figs/example2.png",transparent=True, bbox_inches="tight")
     # plt.show()

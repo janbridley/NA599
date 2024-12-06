@@ -57,9 +57,45 @@ kernels = {
     "centered": bravais_kernel(**CENTERED_CELL_PARAMS, blur_sigma=SIG_MATCH),
 }
 
+#/anvil/scratch/x-kjensen/NA599/workspace/32c4dff28f4650a0d72cdb966cffc409
+
+class SimulationData2(Dataset):
+    def __init__(self, mode, transform=None):
+        import signac
+
+        self.transform = transform
+
+        project = signac.get_project()
+        jobs = project.find_jobs()
+
+        self.labels = []
+        self.images = []
+
+        for job in jobs:
+            data = np.load("/anvil/scratch/x-kjensen/NA599/workspace/32c4dff28f4650a0d72cdb966cffc409/data.npz")
+
+
+            # Labels are stored in the data args.
+            # For now, this is just timestep, but could contain an OP
+            self.labels.extend([f"{job.id[:8]}_{arg}" for arg in data["args"]])
+            self.images.extend(data["kwds"].astype(np.uint8))
+
+        assert len(self.labels) == len(self.images), "Data labels do not match images!"
+        self.num_samples = len(self.labels)
+
+    def __getitem__(self, index):
+        image, label = self.images[index], self.labels[index]
+        assert image.shape == FINAL_DATA_SHAPE
+        image = Image.fromarray(image.astype(np.uint8))
+        if self.transform is not None:
+            image = self.transform(image)
+        return image, label
+
+    def __len__(self):
+        return len(self.labels)
 
 print("Build the dataset...")
-dat = SimulationData(mode="test")
+dat = SimulationData2(mode="test")
 im, label = dat[1]
 print(f"Label: {label}")
 plt.imshow(im)
