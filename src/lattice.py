@@ -95,14 +95,14 @@ def gkern(l=5, sigma=1.0):  # noqa: E741
     return kernel / kernel.sum()
 
 
-def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0, px=9, n=(3,3)):
+def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0, px=9, n=(3,3), rot_angle = 0):
     """Create a one unit-cell kernel from bravais lattice parameters."""
     print(f"L2: {L2}")
     print(f"theta: {theta/np.pi/np.pi:.4f}π")
     print(f"px: {px}")
-    box, pos, _ = slice_to_orthogonal(
-        *make_bravais2d(n=(*n, 1), L2=L2, theta=theta, centered=centered)
-    )
+    box, pos = make_bravais2d(n=(n[0]+1, n[1]+1, 1), L2=L2, theta=theta, centered=centered)
+    pos[:,:-1] = pos[:,:-1] @ rotation_matrix(rot_angle).T
+    box, pos, _ = slice_to_orthogonal(box, pos)
     return lattice2image(box, pos, px=px, blur_sigma=blur_sigma, pad_width=4)
 
 
