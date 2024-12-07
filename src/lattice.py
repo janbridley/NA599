@@ -51,8 +51,7 @@ def lat2im_KT(box, pos, px=64, blur_sigma=0.0, pad_width=0):
     y_min = min(pos[:,1])
     y_bins = bin_width * np.arange(np.floor(y_min / bin_width), np.ceil(y_max / bin_width) + 1)
     
-    '''
-    plt.figure(figsize=(80,80))
+    plt.figure(figsize=(20,20))
     plt.hlines(y_bins, min(pos[:,0]), max(pos[:,0]), color='k', alpha=.5)
     plt.vlines(x_bins, min(pos[:,1]), max(pos[:,1]), color='k', alpha=.5)
     plt.scatter(pos[:, 0], -pos[:, 1])
@@ -60,18 +59,17 @@ def lat2im_KT(box, pos, px=64, blur_sigma=0.0, pad_width=0):
     plt.axis('equal')
     plt.savefig(f"../figs/pixelspace_NEW_{pos[3,0]:.2f}.png")
     plt.close()
-    '''
 
     image, x, y = np.histogram2d(pos[:, 0], pos[:, 1], bins=(x_bins,y_bins))
     image = image.T
-    '''
+    
     plt.figure()
     plt.set_cmap('cmc.acton')
     plt.imshow(image, aspect="equal")
     plt.axis('equal')
     plt.savefig(f"../figs/KT_hist_{pos[3,0]:.2f}.png",transparent=True, bbox_inches="tight")
     plt.close()
-    '''
+    
     # Remove points from outside the box. Should never trigger for orthogonal boxes
     if not np.isclose(box.xy,0.0):
         BOX_PADDING_SCALE = 0.9  # Required to properly wrap points near the box edges
@@ -145,7 +143,7 @@ def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0, n=(3
     print(pos) 
     print(box)
     print('len pos 1: ', len(pos))
-    
+   
     '''
     plt.scatter(pos[:,0], -pos[:,1])
     plt.axis('equal')
@@ -156,7 +154,7 @@ def bravais_kernel(L2=1.0, theta=np.pi / 2, centered=False, blur_sigma=0.0, n=(3
     x_min = min(pos[:,0])
     x_max = max(pos[:,0])
 
-    px = np.ceil(x_max/px_width - x_min/px_width) # number of pixels depends on rotation of point before image
+    px = np.ceil((box.Lx/2)/px_width - (-box.Lx/2)/px_width) # number of pixels depends on rotation of point before image
 
     #return lattice2image(box, pos, px=px, blur_sigma=blur_sigma, pad_width=4)
     return lat2im_KT(box, pos, px=px, blur_sigma=blur_sigma, pad_width=4)

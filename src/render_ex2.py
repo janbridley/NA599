@@ -60,7 +60,7 @@ if __name__ == "__main__":
     kernel = np.pad(gkern(16, sigma=SIG_MATCH),4)
     im_gauss = sp.signal.convolve(im, kernel, mode=CONVOLVE_MODE)
     bkern = bravais_kernel(**MONOCLINIC_CELL_PARAMS, blur_sigma=SIG_MATCH, 
-            n=N_KERN, rot_angle = rotations[1], px_width=real_space_pixel_width)
+            n=N_KERN, rot_angle = rotations[0], px_width=real_space_pixel_width)
     print('shape bkern: ',bkern.shape)
     im_brav = sp.signal.convolve(im, bkern, mode=CONVOLVE_MODE)
     non_matching_bkern = bravais_kernel(**HEXAGONAL_CELL_PARAMS, blur_sigma=SIG_MATCH, px_width=real_space_pixel_width)
