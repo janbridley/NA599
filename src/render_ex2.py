@@ -13,7 +13,7 @@ if __name__ == "__main__":
     MONOCLINIC_CELL_PARAMS = {"L2": 1.17, "theta": np.pi / 5.1}
     HEXAGONAL_CELL_PARAMS = {"L2": 1, "theta": np.pi / 3}
     RECTANGULAR_CELL_PARAMS = {"L2": 2}
-    RECTANGULAR_CENTERED_CELL_PARAMS = {"L2": 2, "centered": True}
+    RECTANGULAR_CENTERED_CELL_PARAMS = {"L2": 2,"centered": True}
 
     CONVOLVE_MODE = "same"#"full" # "same"
 
@@ -21,8 +21,7 @@ if __name__ == "__main__":
     N_LATT = 8
     
     PX = 256
-    OUT_PX = PX * N_KERN[0]*N_KERN[1]// N_LATT**2 * 2
-
+    #OUT_PX = PX * N_KERN[0]*N_KERN[1]// N_LATT**2 * 4
 
     SIG_MATCH = PX / 128
 
@@ -31,6 +30,7 @@ if __name__ == "__main__":
     # box, pos = make_bravais2d(4, **RECTANGULAR_CENTERED_CELL_PARAMS) # Centered rectangular
 
     box, pos = make_bravais2d(N_LATT, **MONOCLINIC_CELL_PARAMS, sigma_noise=0.0)
+    print('box.Lx: ', box.Lx) 
     print(f"N: {len(pos)}")
     # ax, _ = system_plot((box, np.zeros((0,3))))
     ax = box.plot(linestyle="--", label="Natural Basis")
@@ -54,13 +54,16 @@ if __name__ == "__main__":
     # box, pos = make_polycrystalline(midpoints, theta =2*np.pi/3, n=30, L2=1.0, sigma_noise=0.0)
     box, pos, rotations = make_polycrystalline(midpoints, **MONOCLINIC_CELL_PARAMS, n=8, sigma_noise=0.0)
     
-    im = lattice2image(box, pos, blur_sigma=0, px=PX)
+    #im = lattice2image(box, pos, blur_sigma=SIG_MATCH, px=PX)
+    im = lat2im_KT(box, pos, blur_sigma=SIG_MATCH, px=PX)
+    real_space_pixel_width = box.Lx / PX
     kernel = np.pad(gkern(16, sigma=SIG_MATCH),4)
     im_gauss = sp.signal.convolve(im, kernel, mode=CONVOLVE_MODE)
-    bkern = bravais_kernel(**MONOCLINIC_CELL_PARAMS, blur_sigma=SIG_MATCH, px=OUT_PX, n=N_KERN, rot_angle = rotations[2])
+    bkern = bravais_kernel(**MONOCLINIC_CELL_PARAMS, blur_sigma=SIG_MATCH, 
+            n=N_KERN, rot_angle = rotations[0], px_width=real_space_pixel_width)
     print('shape bkern: ',bkern.shape)
     im_brav = sp.signal.convolve(im, bkern, mode=CONVOLVE_MODE)
-    non_matching_bkern = bravais_kernel(**HEXAGONAL_CELL_PARAMS, blur_sigma=SIG_MATCH, px = OUT_PX)
+    non_matching_bkern = bravais_kernel(**HEXAGONAL_CELL_PARAMS, blur_sigma=SIG_MATCH, px_width=real_space_pixel_width)
     im_nm_brav = sp.signal.convolve(im, non_matching_bkern, mode=CONVOLVE_MODE)
 
 
@@ -121,6 +124,7 @@ if __name__ == "__main__":
     dict_text = "\n".join(
         [f"{key if key != 'theta' else 'θ'}: {(value if key != 'theta' else str(round(value/np.pi, 4))+'π')}" for key, value in HEXAGONAL_CELL_PARAMS.items()]
     )
+    
     ax[0, 3].text(
         0.5,
         0.7,
@@ -132,23 +136,23 @@ if __name__ == "__main__":
         fontsize=12,
         bbox={"boxstyle": "round", "facecolor": "#430153", "alpha": 0.8},
     )
-
+    
     # Convolved with non-matching unit-cell kernel at [1, 3]
     ax[1, 3].imshow(im_nm_brav, aspect="equal")
     ax[1, 3].set(xticks=[], yticks=[], title="Convolved with Incorrect Unit Cell")
-
+    
     plt.savefig("../figs/example2.png",transparent=True, bbox_inches="tight")
     # plt.show()
 
     plt.close()
 
     # Plotting kernels to debug
-    '''
+    
     plt.figure()
     fig, ax = plt.subplots(1, 2, dpi=300)
     plt.set_cmap('cmc.acton')
     ax[0].imshow(bkern, aspect="equal")
     ax[1].imshow(im_gauss[:bkern.shape[0], im_gauss.shape[1]-bkern.shape[1]:], aspect="equal")
     plt.savefig("../figs/example2_kernels.png",transparent=True, bbox_inches="tight")
-    '''
+    
 
