@@ -74,7 +74,6 @@ class SimulationData2(Dataset):
         for job in jobs:
             data = np.load("/anvil/scratch/x-kjensen/NA599/workspace/32c4dff28f4650a0d72cdb966cffc409/data.npz")
 
-
             # Labels are stored in the data args.
             # For now, this is just timestep, but could contain an OP
             self.labels.extend([f"{job.id[:8]}_{arg}" for arg in data["args"]])
