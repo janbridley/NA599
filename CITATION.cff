@@ -1,0 +1,19 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: NA599 Crystal Symmetry
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Trevor
+    family-names: Teague
+    email: tfteague@umich.edu
+    affiliation: Universtiy of Michigan
+  - given-names: Jenna
+    family-names: Bradley
+  - given-names: Kate
+    family-names: Jensen
+repository-code: 'https://github.com/janbridley/NA599'
